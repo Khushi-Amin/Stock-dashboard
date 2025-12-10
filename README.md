@@ -20,7 +20,7 @@ WebSocket server hosted on Render for real-time price simulation.
 ## 🌐 Live Demo
 
 ### 🔹 Frontend (Netlify)
-👉 https://elegant-griffin-e153d5.netlify.app/
+👉 https://delightful-beignet-dec7f5.netlify.app/
 
 ### 🔹 Backend WebSocket Server (Render)
 👉 https://stock-dashboard-1-ags9.onrender.com  
