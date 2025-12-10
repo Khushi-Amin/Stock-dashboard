@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StockPulse Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { margin:0; background:#0d1117; color:white; font-family:Arial; }
+header{
+    padding:18px 30px;
+    background:#11161c;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid #1f242d;
+}
+.logo{font-size:22px;font-weight:bold;}
+.add-btn{
+    padding:10px 18px;background:#00c853;color:black;
+    border:none;border-radius:8px;font-weight:bold;cursor:pointer;
+}
+.add-btn:hover{background:#00b34d;}
+#legend{padding:20px;display:flex;gap:20px;font-size:14px;color:#aaa;}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+.up-dot{background:#4ade80;}
+.down-dot{background:#f87171;}
+.live-dot{background:#4ade80;animation: pulse 1s infinite;}
+@keyframes pulse{0%{opacity:.2;}50%{opacity:1;}100%{opacity:.2;}}
+
+#cards{padding:30px;display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));}
+
+.card{
+    background:#111820;
+    padding:20px;border-radius:12px;
+    border:1px solid #1f242d;
+}
+
+.up{color:#4ade80;font-weight:bold;}
+.down{color:#ff7676;font-weight:bold;}
+
+.remove-btn{
+    margin-top:10px;width:100%;padding:8px;background:#ff5252;color:black;
+    border:none;border-radius:8px;cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">📈 StockPulse</div>
+    <button class="add-btn" onclick="openModal()">+ Add Stock</button>
+</header>
+
+<!-- Legend -->
+<div id="legend">
+    <div><span class="legend-dot up-dot"></span> Price Up</div>
+    <div><span class="legend-dot down-dot"></span> Price Down</div>
+    <div><span class="legend-dot live-dot"></span> Live Updates</div>
+</div>
+
+<!-- Cards -->
+<div id="cards"></div>
+
+<!-- Modal -->
+<div id="modal" style="
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;">
+    <div style="background:#111820;padding:26px;width:350px;border-radius:12px;">
+        <h3>Select Stock</h3>
+        <div id="stockList"></div>
+        <button class="add-btn" onclick="closeModal()" style="margin-top:20px;">Close</button>
+    </div>
+</div>
+
+<script>
+if(!localStorage.getItem("user")) window.location="auth.html";
+
+/* ✅ FIXED: Your WebSocket URL */
+const WS_URL = "wss://stock-dashboard-1-ags9.onrender.com";
+
+/* Supported tickers */
+const SUPPORTED=["GOOG","TSLA","AMZN","META","NVDA"];
+
+let ws=null;
+let prices={GOOG:2850,TSLA:700,AMZN:3300,META:320,NVDA:450};
+let prev={};
+let subscribed=new Set();
+let history={};
+SUPPORTED.forEach(t=>history[t]=[]);
+
+/* Modal functions */
+function openModal(){ document.getElementById("modal").style.display="flex"; }
+function closeModal(){ document.getElementById("modal").style.display="none"; }
+
+/* Build list inside modal */
+SUPPORTED.forEach(t=>{
+    let div=document.createElement("div");
+    div.textContent=t;
+    div.style.padding="10px";
+    div.style.background="#0f141a";
+    div.style.margin="8px 0";
+    div.style.borderRadius="8px";
+    div.style.cursor="pointer";
+    div.onclick=()=>subscribeStock(t);
+    document.getElementById("stockList").appendChild(div);
+});
+
+/* WebSocket connection */
+function connectWS(){
+    ws=new WebSocket(WS_URL);
+
+    ws.onopen=()=>{
+        ws.send(JSON.stringify({type:"login",email:localStorage.getItem("user")}));
+        subscribed.forEach(t=>ws.send(JSON.stringify({type:"subscribe",ticker:t})));
+    };
+
+    ws.onmessage=(msg)=>{
+        let data=JSON.parse(msg.data);
+        if(data.type==="prices") updatePrices(data.prices);
+    };
+
+    ws.onclose=()=>setTimeout(connectWS,2000);
+}
+connectWS();
+
+/* Update UI when new prices arrive */
+function updatePrices(newP){
+    prev={...prices};
+    Object.assign(prices,newP);
+
+    Object.entries(newP).forEach(([t,p])=>{
+        history[t].push(p);
+        if(history[t].length>25) history[t].shift();
+    });
+
+    renderCards();
+}
+
+/* Subscribe to a stock */
+function subscribeStock(t){
+    if(subscribed.has(t)) return;
+    subscribed.add(t);
+
+    if(ws && ws.readyState===1)
+        ws.send(JSON.stringify({type:"subscribe",ticker:t}));
+
+    renderCards();
+    closeModal();
+}
+
+/* Remove stock */
+function removeStock(t){
+    subscribed.delete(t);
+
+    if(ws && ws.readyState===1)
+        ws.send(JSON.stringify({type:"unsubscribe",ticker:t}));
+
+    renderCards();
+}
+
+/* Small sparkline graph */
+function sparkline(values){
+    let max=Math.max(...values);
+    let min=Math.min(...values);
+    let pts=values.map((v,i)=>`${i*10},${30-(v-min)/(max-min+0.0001)*30}`).join(" ");
+    return `<svg width="${values.length*10}" height="35">
+              <polyline points="${pts}" fill="none" stroke="#4ade80" stroke-width="2"/>
+            </svg>`;
+}
+
+/* Render all subscribed cards */
+function renderCards(){
+    const cards=document.getElementById("cards");
+    cards.innerHTML="";
+
+    subscribed.forEach(t=>{
+        let p=prices[t];
+        let diff=prev[t]?p-prev[t]:0;
+        let cls=diff>0?"up":diff<0?"down":"";
+
+        cards.innerHTML += `
+            <div class="card">
+                <h2>${t}</h2>
+                <div class="${cls}" style="font-size:26px;">${p.toFixed(2)}</div>
+                <div style="margin-top:10px;">
+                    ${history[t].length>2 ? sparkline(history[t]) : ""}
+                </div>
+                <button class="remove-btn" onclick="removeStock('${t}')">Remove</button>
+            </div>
+        `;
+    });
+}
+
+renderCards();
+</script>
+
+</body>
+</html>

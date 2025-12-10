@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>StockPulse – Login / Sign Up</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+    margin: 0;
+    background: #0d1117;
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card {
+    background: #11161c;
+    padding: 30px;
+    width: 420px;
+    border-radius: 14px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 28px;
+}
+
+.subtitle {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #8b949e;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    margin: 0 5px;
+    border-radius: 8px;
+    background: #1b222b;
+    color: #aaa;
+    transition: 0.2s;
+}
+
+.tab-btn.active {
+    background: #00c853;
+    color: #000;
+    font-weight: bold;
+}
+
+.input-box {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #333;
+    background: #0f141a;
+    border-radius: 8px;
+    color: white;
+}
+
+button.submit-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #00c853;      /* SIMPLE FLAT GREEN */
+    color: black;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+button.submit-btn:hover {
+    background: #00b34d;  /* Slightly darker green */
+}
+
+.link-area {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.link-area span {
+    color: #58a6ff;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>StockPulse</h1>
+    <div class="subtitle">Real-time stock tracking dashboard</div>
+
+    <div class="tabs">
+        <button class="tab-btn active" id="loginTab">Sign In</button>
+        <button class="tab-btn" id="signupTab">Sign Up</button>
+    </div>
+
+    <div id="formArea"></div>
+
+    <div class="link-area" id="toggleLink"></div>
+</div>
+
+<script>
+loadLogin();
+
+document.getElementById("loginTab").onclick = ()=>{
+    activateTab("login");
+    loadLogin();
+};
+document.getElementById("signupTab").onclick = ()=>{
+    activateTab("signup");
+    loadSignup();
+};
+
+function activateTab(tab){
+    document.getElementById("loginTab").classList.remove("active");
+    document.getElementById("signupTab").classList.remove("active");
+
+    if(tab==="login") document.getElementById("loginTab").classList.add("active");
+    else document.getElementById("signupTab").classList.add("active");
+}
+
+function loadLogin(){
+    document.getElementById("formArea").innerHTML = `
+        <div class="input-box"><input id="email" type="email" placeholder="Email"></div>
+        <div class="input-box"><input id="password" type="password" placeholder="Password"></div>
+        <button class="submit-btn" onclick="login()">Sign In →</button>
+    `;
+    document.getElementById("toggleLink").innerHTML = `
+        Don't have an account? <span onclick="tab('signup')">Sign Up</span>
+    `;
+}
+
+function loadSignup(){
+    document.getElementById("formArea").innerHTML = `
+        <div class="input-box"><input id="name" type="text" placeholder="Full Name"></div>
+        <div class="input-box"><input id="email" type="email" placeholder="Email"></div>
+        <div class="input-box"><input id="password" type="password" placeholder="Password"></div>
+        <button class="submit-btn" onclick="signup()">Create Account →</button>
+    `;
+    document.getElementById("toggleLink").innerHTML = `
+        Already have an account? <span onclick="tab('login')">Sign In</span>
+    `;
+}
+
+function tab(mode){
+    if(mode==="login"){ activateTab("login"); loadLogin(); }
+    else { activateTab("signup"); loadSignup(); }
+}
+
+function login(){
+    localStorage.setItem("user", document.getElementById("email").value);
+    window.location = "dashboard.html";
+}
+function signup(){
+    localStorage.setItem("user", document.getElementById("email").value);
+    window.location = "dashboard.html";
+}
+</script>
+
+</body>
+</html>
