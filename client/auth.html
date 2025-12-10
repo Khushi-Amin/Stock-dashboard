@@ -115,13 +115,20 @@ button.submit-btn:hover {
 </div>
 
 <script>
-loadLogin();
+/****************************
+   SIMPLE AUTH SYSTEM
+   Users stored in localStorage
+****************************/
 
-document.getElementById("loginTab").onclick = ()=>{
+loadLogin();  // Load login by default
+
+// Tab switching
+document.getElementById("loginTab").onclick = () => {
     activateTab("login");
     loadLogin();
 };
-document.getElementById("signupTab").onclick = ()=>{
+
+document.getElementById("signupTab").onclick = () => {
     activateTab("signup");
     loadSignup();
 };
@@ -130,9 +137,11 @@ function activateTab(tab){
     document.getElementById("loginTab").classList.remove("active");
     document.getElementById("signupTab").classList.remove("active");
 
-    if(tab==="login") document.getElementById("loginTab").classList.add("active");
+    if(tab === "login") document.getElementById("loginTab").classList.add("active");
     else document.getElementById("signupTab").classList.add("active");
 }
+
+/**********  LOAD FORMS (UI stays SAME)  **********/
 
 function loadLogin(){
     document.getElementById("formArea").innerHTML = `
@@ -140,6 +149,7 @@ function loadLogin(){
         <div class="input-box"><input id="password" type="password" placeholder="Password"></div>
         <button class="submit-btn" onclick="login()">Sign In →</button>
     `;
+
     document.getElementById("toggleLink").innerHTML = `
         Don't have an account? <span onclick="tab('signup')">Sign Up</span>
     `;
@@ -152,25 +162,77 @@ function loadSignup(){
         <div class="input-box"><input id="password" type="password" placeholder="Password"></div>
         <button class="submit-btn" onclick="signup()">Create Account →</button>
     `;
+
     document.getElementById("toggleLink").innerHTML = `
         Already have an account? <span onclick="tab('login')">Sign In</span>
     `;
 }
 
 function tab(mode){
-    if(mode==="login"){ activateTab("login"); loadLogin(); }
-    else { activateTab("signup"); loadSignup(); }
+    if(mode === "login"){ 
+        activateTab("login");
+        loadLogin();
+    } else {
+        activateTab("signup");
+        loadSignup();
+    }
 }
 
-function login(){
-    localStorage.setItem("user", document.getElementById("email").value);
-    window.location = "dashboard.html";
-}
+/**********  AUTH FUNCTIONS  **********/
+
+// SIGNUP — Save user
 function signup(){
-    localStorage.setItem("user", document.getElementById("email").value);
+    let name = document.getElementById("name").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+
+    if(!name || !email || !password){
+        alert("Please fill all fields.");
+        return;
+    }
+
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+    if(users[email]){
+        alert("This email is already registered. Try Sign In.");
+        return;
+    }
+
+    users[email] = { name, password };
+    localStorage.setItem("users", JSON.stringify(users));
+
+    alert("Account created successfully! Now Sign In.");
+    tab("login");
+}
+
+// LOGIN — Validate credential
+function login(){
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+
+    if(!email || !password){
+        alert("Enter both email and password.");
+        return;
+    }
+
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+    if(!users[email]){  
+        alert("No account found with this email.");
+        return;
+    }
+
+    if(users[email].password !== password){
+        alert("Incorrect password.");
+        return;
+    }
+
+    // Login success
+    localStorage.setItem("user", email);
     window.location = "dashboard.html";
 }
 </script>
+
 
 </body>
 </html>
